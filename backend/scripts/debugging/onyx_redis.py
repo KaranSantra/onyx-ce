@@ -10,7 +10,6 @@ from uuid import UUID
 
 from redis import Redis
 
-from ee.onyx.server.tenants.user_mapping import get_tenant_id_for_email
 from onyx.auth.invited_users import get_invited_users
 from onyx.auth.invited_users import write_invited_users
 from onyx.configs.app_configs import REDIS_AUTH_KEY_PREFIX
@@ -63,9 +62,8 @@ class OnyxRedisCommand(Enum):
 
 
 def get_user_id(user_email: str) -> tuple[UUID, str]:
-    tenant_id = (
-        get_tenant_id_for_email(user_email) if MULTI_TENANT else POSTGRES_DEFAULT_SCHEMA
-    )
+    # Simplified for non-EE version - uses default schema for multi-tenant
+    tenant_id = POSTGRES_DEFAULT_SCHEMA if MULTI_TENANT else POSTGRES_DEFAULT_SCHEMA
 
     with get_session_with_tenant(tenant_id=tenant_id) as session:
         user = get_user_by_email(user_email, session)

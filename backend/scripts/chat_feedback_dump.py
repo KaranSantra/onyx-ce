@@ -8,7 +8,8 @@ from uuid import UUID
 
 import requests
 
-from ee.onyx.server.query_history.api import ChatSessionSnapshot
+# Removed: from ee.onyx.server.query_history.api import ChatSessionSnapshot
+# The ChatSessionSnapshot model is not available in community edition
 from onyx.server.manage.models import AllUsersResponse
 from onyx.server.query_and_chat.models import ChatSessionsResponse
 
@@ -20,6 +21,9 @@ logging.basicConfig(
 )
 
 logger = getLogger(__name__)
+
+# Note: This script requires enterprise edition features for full functionality
+# Some features are not available in the community edition
 
 # uncomment the following pydantic models if you need the script to be independent
 # from pydantic import BaseModel
@@ -170,7 +174,9 @@ def get_chat_sessions(
 
 def get_session_history(
     onyx_url: str, headers: dict[str, str] | None, session_id: UUID
-) -> ChatSessionSnapshot:
+) -> dict[str, Any]:
+    # Note: This function requires enterprise edition features
+    # Returning raw dict since ChatSessionSnapshot is not available in community edition
     endpoint = onyx_url + f"/admin/chat-session-history/{session_id}"
 
     response = requests.get(
@@ -179,8 +185,7 @@ def get_session_history(
     )
     response.raise_for_status()
 
-    sessions = ChatSessionSnapshot(**response.json())
-    return sessions
+    return response.json()
 
 
 def process_all_chat_feedback(onyx_url: str, api_key: str | None) -> None:
@@ -198,20 +203,20 @@ def process_all_chat_feedback(onyx_url: str, api_key: str | None) -> None:
         r_sessions = get_chat_sessions(onyx_url, headers, user_id)
         logger.info(f"user={user_id} num_sessions={len(r_sessions.sessions)}")
         for session in r_sessions.sessions:
-            s: ChatSessionSnapshot
             try:
                 s = get_session_history(onyx_url, headers, session.id)
+                # Handle as raw dict since ChatSessionSnapshot is EE-only
+                messages = s.get("messages", [])
+                for m in messages:
+                    logger.info(
+                        f"user={user_id} "
+                        f"session={session.id} "
+                        f"message={m.get('message', '')} "
+                        f"feedback_type={m.get('feedback_type', None)} "
+                        f"feedback_text={m.get('feedback_text', None)}"
+                    )
             except requests.exceptions.HTTPError:
                 logger.exception("get_session_history failed.")
-
-            for m in s.messages:
-                logger.info(
-                    f"user={user_id} "
-                    f"session={session.id} "
-                    f"message={m.message} "
-                    f"feedback_type={m.feedback_type} "
-                    f"feedback_text={m.feedback_text}"
-                )
 
 
 if __name__ == "__main__":

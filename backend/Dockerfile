@@ -46,13 +46,11 @@ RUN apt-get update && \
 # Install Python dependencies
 # Remove py which is pulled in by retry, py is not needed and is a CVE
 COPY ./requirements/default.txt /tmp/requirements.txt
-COPY ./requirements/ee.txt /tmp/ee-requirements.txt
 RUN pip install --no-cache-dir --upgrade \
         --retries 5 \
         --timeout 30 \
-        -r /tmp/requirements.txt \
-        -r /tmp/ee-requirements.txt && \
-    pip uninstall -y py && \
+        -r /tmp/requirements.txt && \
+    pip uninstall --yes py && \
     playwright install chromium && \
     playwright install-deps chromium && \
     ln -s /usr/local/bin/supervisord /usr/bin/supervisord
@@ -92,7 +90,7 @@ nltk.download('punkt_tab', quiet=True);"
 WORKDIR /app
 
 # Enterprise Version Files
-COPY ./ee /app/ee
+# COPY ./ee /app/ee
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Set up application files
