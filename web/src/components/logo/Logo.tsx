@@ -33,11 +33,10 @@ export function Logo({
     !settings.enterpriseSettings.use_custom_logo
   ) {
     return (
-      <div style={{ height, width }} className={className}>
-        <OnyxIcon
-          size={height}
-          className={`${className} dark:text-[#fff] text-[#000]`}
-        />
+      <div style={{ height, width }} className={`${className} flex items-center`}>
+        <span className={`font-bold text-blue-600 dark:text-blue-400`} style={{ fontSize: height * 0.6 }}>
+          PA Team
+        </span>
       </div>
     );
   }
@@ -63,9 +62,8 @@ export function LogoType({
   size?: "small" | "default" | "large";
 }) {
   return (
-    <OnyxLogoTypeIcon
-      size={115}
-      className={`items-center w-full dark:text-[#fff]`}
-    />
+    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+      PA Team
+    </span>
   );
 }
