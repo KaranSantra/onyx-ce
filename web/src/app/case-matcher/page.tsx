@@ -44,6 +44,7 @@ export default function Page() {
   });
 
   const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState("");
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
@@ -173,15 +174,69 @@ export default function Page() {
     return processContent(response);
   }, [response, processContent]);
 
+  // Validation functions
+  const validateEmail = (email: string): string | null => {
+    if (!email) return null; // Not required, so empty is valid
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) ? null : "Please enter a valid email address";
+  };
+
+  const validatePhone = (phone: string): string | null => {
+    if (!phone) return null; // Not required, so empty is valid
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    const cleanPhone = phone.replace(/[\s\(\)\-\.]/g, '');
+    return phoneRegex.test(cleanPhone) ? null : "Please enter a valid phone number";
+  };
+
+  const validateName = (name: string): string | null => {
+    if (!name) return null; // Not required, so empty is valid
+    return name.length > 50 ? "Name must be 50 characters or less" : null;
+  };
+
+  const validateAdditionalInfo = (info: string): string | null => {
+    if (!info) return null; // Not required, so empty is valid
+    return info.length > 2000 ? "Additional information must be 2000 characters or less" : null;
+  };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
+
+    // Validate the field and update validation errors
+    let validationError: string | null = null;
+    switch (field) {
+      case 'firstName':
+      case 'lastName':
+        validationError = validateName(value);
+        break;
+      case 'email':
+        validationError = validateEmail(value);
+        break;
+      case 'phoneNumber':
+        validationError = validatePhone(value);
+        break;
+      case 'additionalInformation':
+        validationError = validateAdditionalInfo(value);
+        break;
+    }
+
+    setValidationErrors((prev) => ({
+      ...prev,
+      [field]: validationError || '',
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check for validation errors
+    const hasValidationErrors = Object.values(validationErrors).some(error => error);
+    if (hasValidationErrors) {
+      setError("Please fix the validation errors before submitting.");
+      return;
+    }
     
     if (!formData.additionalInformation.trim()) {
       setError("Please provide additional information about your case.");
@@ -238,7 +293,7 @@ export default function Page() {
           <div className="p-6 border-r border-gray-200 dark:border-gray-700 overflow-y-auto w-full">
             <form
               onSubmit={handleSubmit}
-              className="space-y-3 w-full max-w-none"
+              className="space-y-2 w-full max-w-none"
             >
               <div className="w-full">
                 <Label
@@ -254,8 +309,11 @@ export default function Page() {
                   onChange={(e) =>
                     handleInputChange("firstName", e.target.value)
                   }
-                  className="w-full h-9"
+                  className={`w-full h-9 ${validationErrors.firstName ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.firstName && (
+                  <p className="text-red-500 text-xs mt-1">{validationErrors.firstName}</p>
+                )}
               </div>
 
               <div className="w-full">
@@ -272,8 +330,11 @@ export default function Page() {
                   onChange={(e) =>
                     handleInputChange("lastName", e.target.value)
                   }
-                  className="w-full h-9"
+                  className={`w-full h-9 ${validationErrors.lastName ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.lastName && (
+                  <p className="text-red-500 text-xs mt-1">{validationErrors.lastName}</p>
+                )}
               </div>
 
               <div className="w-full">
@@ -288,8 +349,11 @@ export default function Page() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  className="w-full h-9"
+                  className={`w-full h-9 ${validationErrors.email ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.email && (
+                  <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>
+                )}
               </div>
 
               <div className="w-full">
@@ -306,8 +370,11 @@ export default function Page() {
                   onChange={(e) =>
                     handleInputChange("phoneNumber", e.target.value)
                   }
-                  className="w-full h-9"
+                  className={`w-full h-9 ${validationErrors.phoneNumber ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.phoneNumber && (
+                  <p className="text-red-500 text-xs mt-1">{validationErrors.phoneNumber}</p>
+                )}
               </div>
 
               <div className="w-full">
@@ -394,9 +461,12 @@ export default function Page() {
                   onChange={(e) =>
                     handleInputChange("additionalInformation", e.target.value)
                   }
-                  className="w-full min-h-[100px] resize-y"
+                  className={`w-full min-h-[100px] resize-y ${validationErrors.additionalInformation ? 'border-red-500' : ''}`}
                   placeholder="Please describe your legal matter in detail..."
                 />
+                {validationErrors.additionalInformation && (
+                  <p className="text-red-500 text-xs mt-1">{validationErrors.additionalInformation}</p>
+                )}
               </div>
 
               {error && <ErrorCallout errorMsg={error} />}

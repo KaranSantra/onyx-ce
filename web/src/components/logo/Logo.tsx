@@ -33,8 +33,8 @@ export function Logo({
     !settings.enterpriseSettings.use_custom_logo
   ) {
     return (
-      <div style={{ height, width }} className={`${className} flex items-center`}>
-        <span className={`font-bold text-blue-600 dark:text-blue-400`} style={{ fontSize: height * 0.6 }}>
+      <div style={{ height, width: 'auto', minWidth: width }} className={`${className} flex items-center`}>
+        <span className={`font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap`} style={{ fontSize: height * 0.6 }}>
           PA Team
         </span>
       </div>
