@@ -20,7 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ErrorCallout } from "@/components/ErrorCallout";
-import { submitCaseQuery, PacketType } from "./lib";
+import { submitCaseQuery, submitTwoStageCaseQuery, PacketType } from "./lib";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -53,6 +53,9 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState("");
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
+  const [isSecondStageLoading, setIsSecondStageLoading] = useState(false);
+  const [secondStageResponse, setSecondStageResponse] = useState("");
+  const [showSecondStage, setShowSecondStage] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Process content for markdown rendering (similar to chat implementation)
@@ -197,6 +200,18 @@ export default function Page() {
     return processContent(response);
   }, [response, processContent]);
 
+  // Format JSON response for display
+  const formatJsonResponse = (jsonResponse: string): string => {
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(jsonResponse);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      // If it's not valid JSON, return as is
+      return jsonResponse;
+    }
+  };
+
   // Validation functions
   const validateEmail = (email: string): string | null => {
     if (!email) return null; // Not required, so empty is valid
@@ -275,22 +290,48 @@ export default function Page() {
     setIsLoading(true);
     setError(null);
     setResponse("");
+    setSecondStageResponse("");
+    setShowSecondStage(false);
 
     // Create new abort controller for this request
     abortControllerRef.current = new AbortController();
 
     try {
-      // Submit the case query and get streaming response
-      const streamGenerator = await submitCaseQuery(
+      // Submit the two-stage case query
+      const twoStageResult = await submitTwoStageCaseQuery(
         formData.additionalInformation,
         abortControllerRef.current.signal
       );
 
-      // Process streaming response
-      for await (const packet of streamGenerator) {
+      let fullResponse = "";
+      
+      // Process first stage streaming response
+      for await (const packet of twoStageResult.categorizationResponse) {
         if (packet.answer_piece) {
-          setResponse((prev) => prev + packet.answer_piece);
+          const newPiece = packet.answer_piece;
+          fullResponse += newPiece;
+          setResponse((prev) => prev + newPiece);
         }
+      }
+
+      // Check if we need to trigger second stage
+      if (twoStageResult.checkForCaseInquiry(fullResponse)) {
+        setShowSecondStage(true);
+        setIsSecondStageLoading(true);
+        
+        // Submit detailed query for second stage
+        const detailedStreamGenerator = await twoStageResult.submitDetailedQuery();
+        
+        let secondStageFullResponse = "";
+        for await (const packet of detailedStreamGenerator) {
+          if (packet.answer_piece) {
+            const newPiece = packet.answer_piece;
+            secondStageFullResponse += newPiece;
+            setSecondStageResponse((prev) => prev + newPiece);
+          }
+        }
+        
+        setIsSecondStageLoading(false);
       }
     } catch (error: any) {
       if (error.name === "AbortError") {
@@ -303,6 +344,7 @@ export default function Page() {
       }
     } finally {
       setIsLoading(false);
+      setIsSecondStageLoading(false);
       abortControllerRef.current = null;
     }
   };
@@ -564,29 +606,61 @@ export default function Page() {
             )}
 
             {response && (
-              <div className="bg-transparent rounded-lg p-4">
-                <div className="max-w-none">
-                  <ReactMarkdown
-                    className="prose dark:prose-invert max-w-full text-base"
-                    components={markdownComponents}
-                    remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[
-                      [rehypePrism, { ignoreMissing: true }],
-                      rehypeKatex,
-                    ]}
-                    urlTransform={transformLinkUri}
-                  >
-                    {processedResponse}
-                  </ReactMarkdown>
-                  {isLoading && (
-                    <div className="flex items-center mt-2 text-blue-600">
-                      <div className="animate-pulse">▊</div>
-                      <span className="ml-2 text-sm">
-                        Generating response...
-                      </span>
-                    </div>
-                  )}
+              <div className="space-y-6">
+                {/* First Stage - Categorization Response */}
+                <div className="bg-transparent rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                    Case Categorization
+                  </h3>
+                  <div className="max-w-none">
+                    <ReactMarkdown
+                      className="prose dark:prose-invert max-w-full text-base"
+                      components={markdownComponents}
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[
+                        [rehypePrism, { ignoreMissing: true }],
+                        rehypeKatex,
+                      ]}
+                      urlTransform={transformLinkUri}
+                    >
+                      {processedResponse}
+                    </ReactMarkdown>
+                    {isLoading && (
+                      <div className="flex items-center mt-2 text-blue-600">
+                        <div className="animate-pulse">▊</div>
+                        <span className="ml-2 text-sm">
+                          Generating response...
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Second Stage - Detailed Case Analysis */}
+                {showSecondStage && (
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                      Detailed Case Analysis (JSON)
+                    </h3>
+                    
+                    {isSecondStageLoading && (
+                      <div className="flex items-center text-blue-600 mb-4">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                        <span className="text-sm">
+                          Performing detailed analysis...
+                        </span>
+                      </div>
+                    )}
+                    
+                    {secondStageResponse && (
+                      <div className="bg-white dark:bg-gray-900 rounded border p-4 overflow-auto">
+                        <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                          {formatJsonResponse(secondStageResponse)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

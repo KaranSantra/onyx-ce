@@ -116,8 +116,8 @@ export async function submitCaseQuery(
   message: string,
   signal?: AbortSignal
 ): Promise<AsyncGenerator<PacketType, void, unknown>> {
-  // Step 1: Create a chat session with the legal assistant (persona_id: 2) Email Classifier
-  const chatSessionId = await createChatSession(2, null);
+  // Step 1: Create a chat session with the legal assistant (persona_id: 1) Email Classifier
+  const chatSessionId = await createChatSession(1, null);
 
   // Step 2: Update the model to default
   await updateLlmOverrideForChatSession(
@@ -127,4 +127,48 @@ export async function submitCaseQuery(
 
   // Step 3: Send message and return streaming response
   return sendMessage(chatSessionId, message, 1, signal);
+}
+
+// Submit detailed case query using persona 2 (no LLM override)
+export async function submitDetailedCaseQuery(
+  message: string,
+  signal?: AbortSignal
+): Promise<AsyncGenerator<PacketType, void, unknown>> {
+  
+  // Step 1: Create a chat session with persona 2 (legal assistant)
+  const chatSessionId = await createChatSession(2, null);
+
+  // Step 2: No LLM override - use default model for persona 2
+
+  // Step 3: Send message and return streaming response
+  return sendMessage(chatSessionId, message, 2, signal);
+}
+
+// Two-stage case processing function
+export async function submitTwoStageCaseQuery(
+  message: string,
+  signal?: AbortSignal
+): Promise<{
+  categorizationResponse: AsyncGenerator<PacketType, void, unknown>;
+  checkForCaseInquiry: (response: string) => boolean;
+  submitDetailedQuery: () => Promise<AsyncGenerator<PacketType, void, unknown>>;
+}> {
+  // First stage: Get categorization from persona 1
+  const categorizationResponse = await submitCaseQuery(message, signal);
+  
+  // Function to check if response contains "case_inquiry"
+  const checkForCaseInquiry = (response: string): boolean => {
+    return response.toLowerCase().includes("case_inquiry");
+  };
+  
+  // Function to submit detailed query if needed
+  const submitDetailedQuery = async (): Promise<AsyncGenerator<PacketType, void, unknown>> => {
+    return await submitDetailedCaseQuery(message, signal);
+  };
+  
+  return {
+    categorizationResponse,
+    checkForCaseInquiry,
+    submitDetailedQuery
+  };
 }
