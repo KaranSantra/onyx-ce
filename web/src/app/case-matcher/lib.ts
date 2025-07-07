@@ -6,12 +6,12 @@ import {
 } from "@/lib/search/interfaces";
 
 // Packet types that we expect from the streaming response
-export type PacketType = 
+export type PacketType =
   | AnswerPiecePacket
   | DocumentInfoPacket
   | StreamStopInfo;
 
-// Create a chat session with the legal assistant (persona_id: 1)
+// Create a chat session with the legal assistant (persona_id: 2)
 export async function createChatSession(
   personaId: number,
   description: string | null
@@ -116,11 +116,14 @@ export async function submitCaseQuery(
   message: string,
   signal?: AbortSignal
 ): Promise<AsyncGenerator<PacketType, void, unknown>> {
-  // Step 1: Create chat session with legal assistant (ID=1)
-  const chatSessionId = await createChatSession(1, null);
+  // Step 1: Create a chat session with the legal assistant (persona_id: 2) Email Classifier
+  const chatSessionId = await createChatSession(2, null);
 
-  // Step 2: Update model to default
-  await updateLlmOverrideForChatSession(chatSessionId, "Default__openai__gpt-4o");
+  // Step 2: Update the model to default
+  await updateLlmOverrideForChatSession(
+    chatSessionId,
+    "Default__openai__gpt-4o"
+  );
 
   // Step 3: Send message and return streaming response
   return sendMessage(chatSessionId, message, 1, signal);

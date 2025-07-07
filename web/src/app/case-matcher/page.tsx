@@ -29,7 +29,10 @@ import rehypeKatex from "rehype-katex";
 import "prismjs/themes/prism-tomorrow.css";
 import "katex/dist/katex.min.css";
 import { CodeBlock } from "@/app/chat/message/CodeBlock";
-import { MemoizedAnchor, MemoizedParagraph } from "@/app/chat/message/MemoizedTextComponents";
+import {
+  MemoizedAnchor,
+  MemoizedParagraph,
+} from "@/app/chat/message/MemoizedTextComponents";
 import { extractCodeText, preprocessLaTeX } from "@/app/chat/message/codeUtils";
 import { transformLinkUri } from "@/lib/utils";
 
@@ -44,46 +47,61 @@ export default function Page() {
   });
 
   const [error, setError] = useState<string | null>(null);
-  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+  const [validationErrors, setValidationErrors] = useState<{
+    [key: string]: string;
+  }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState("");
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Process content for markdown rendering (similar to chat implementation)
-  const processContent = useCallback((content: string) => {
-    const codeBlockRegex = /```(\w*)\n[\s\S]*?```|```[\s\S]*?$/g;
-    const matches = content.match(codeBlockRegex);
+  const processContent = useCallback(
+    (content: string) => {
+      const codeBlockRegex = /```(\w*)\n[\s\S]*?```|```[\s\S]*?$/g;
+      const matches = content.match(codeBlockRegex);
 
-    if (matches) {
-      content = matches.reduce((acc, match) => {
-        if (!match.match(/```\w+/)) {
-          return acc.replace(match, match.replace("```", "```plaintext"));
+      if (matches) {
+        content = matches.reduce((acc, match) => {
+          if (!match.match(/```\w+/)) {
+            return acc.replace(match, match.replace("```", "```plaintext"));
+          }
+          return acc;
+        }, content);
+
+        const lastMatch = matches[matches.length - 1];
+        if (!lastMatch.endsWith("```")) {
+          return preprocessLaTeX(content);
         }
-        return acc;
-      }, content);
-
-      const lastMatch = matches[matches.length - 1];
-      if (!lastMatch.endsWith("```")) {
-        return preprocessLaTeX(content);
       }
-    }
-    const processed = preprocessLaTeX(content);
-    return processed + (!isLoading ? "" : " [*]() ");
-  }, [isLoading]);
+      const processed = preprocessLaTeX(content);
+      return processed + (!isLoading ? "" : " [*]() ");
+    },
+    [isLoading]
+  );
 
   // Custom anchor component for case file references
   const CaseFileAnchor = useCallback(({ href, children }: any) => {
     const value = children?.toString();
-    console.log("CaseFileAnchor - Processing value:", JSON.stringify(value), "href:", href);
-    
+    console.log(
+      "CaseFileAnchor - Processing value:",
+      JSON.stringify(value),
+      "href:",
+      href
+    );
+
     // Convert any .html file reference to "Source link"
     const htmlFileMatch = value?.match(/^(.+?)\.html(\s*\[\d+\])?$/);
     if (htmlFileMatch) {
       const filename = htmlFileMatch[1];
       const caseUrl = `https://www.hbsslaw.com/cases/${filename}`;
-      console.log("CaseFileAnchor - Matched HTML file:", filename, "URL:", caseUrl);
-      
+      console.log(
+        "CaseFileAnchor - Matched HTML file:",
+        filename,
+        "URL:",
+        caseUrl
+      );
+
       return (
         <a
           href={caseUrl}
@@ -95,7 +113,7 @@ export default function Page() {
         </a>
       );
     }
-    
+
     // For regular links, use the default behavior
     return (
       <MemoizedAnchor
@@ -110,28 +128,30 @@ export default function Page() {
   }, []);
 
   // Callback functions for markdown components
-  const anchorCallback = useCallback((props: any) => (
-    <CaseFileAnchor href={props.href}>
-      {props.children}
-    </CaseFileAnchor>
-  ), [CaseFileAnchor]);
+  const anchorCallback = useCallback(
+    (props: any) => (
+      <CaseFileAnchor href={props.href}>{props.children}</CaseFileAnchor>
+    ),
+    [CaseFileAnchor]
+  );
 
-  const paragraphCallback = useCallback((props: any) => (
-    <MemoizedParagraph>{props.children}</MemoizedParagraph>
-  ), []);
+  const paragraphCallback = useCallback(
+    (props: any) => <MemoizedParagraph>{props.children}</MemoizedParagraph>,
+    []
+  );
 
   // Custom table cell component to handle case file references
   const tableCellCallback = useCallback((props: any) => {
     const content = props.children?.toString();
     console.log("Table cell content:", JSON.stringify(content));
-    
+
     // Check if this cell contains a .html file reference
     const htmlFileMatch = content?.match(/^(.+?)\.html(\s*\[\d+\])?$/);
     if (htmlFileMatch) {
       const filename = htmlFileMatch[1];
       const caseUrl = `https://www.hbsslaw.com/cases/${filename}`;
       console.log("Table cell - Matched HTML file:", filename, "URL:", caseUrl);
-      
+
       return (
         <td className={props.className}>
           <a
@@ -145,28 +165,31 @@ export default function Page() {
         </td>
       );
     }
-    
+
     // Default table cell behavior
     return <td className={props.className}>{props.children}</td>;
   }, []);
 
   // Memoized markdown components (simplified version of chat implementation)
-  const markdownComponents = useMemo(() => ({
-    a: anchorCallback,
-    p: paragraphCallback,
-    td: tableCellCallback,
-    b: ({ node, className, children }: any) => (
-      <span className={className}>{children}</span>
-    ),
-    code: ({ node, className, children }: any) => {
-      const codeText = extractCodeText(node, response, children);
-      return (
-        <CodeBlock className={className} codeText={codeText}>
-          {children}
-        </CodeBlock>
-      );
-    },
-  }), [anchorCallback, paragraphCallback, tableCellCallback, response]);
+  const markdownComponents = useMemo(
+    () => ({
+      a: anchorCallback,
+      p: paragraphCallback,
+      td: tableCellCallback,
+      b: ({ node, className, children }: any) => (
+        <span className={className}>{children}</span>
+      ),
+      code: ({ node, className, children }: any) => {
+        const codeText = extractCodeText(node, response, children);
+        return (
+          <CodeBlock className={className} codeText={codeText}>
+            {children}
+          </CodeBlock>
+        );
+      },
+    }),
+    [anchorCallback, paragraphCallback, tableCellCallback, response]
+  );
 
   // Process and render the response content
   const processedResponse = useMemo(() => {
@@ -184,8 +207,10 @@ export default function Page() {
   const validatePhone = (phone: string): string | null => {
     if (!phone) return null; // Not required, so empty is valid
     const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    const cleanPhone = phone.replace(/[\s\(\)\-\.]/g, '');
-    return phoneRegex.test(cleanPhone) ? null : "Please enter a valid phone number";
+    const cleanPhone = phone.replace(/[\s\(\)\-\.]/g, "");
+    return phoneRegex.test(cleanPhone)
+      ? null
+      : "Please enter a valid phone number";
   };
 
   const validateName = (name: string): string | null => {
@@ -195,7 +220,9 @@ export default function Page() {
 
   const validateAdditionalInfo = (info: string): string | null => {
     if (!info) return null; // Not required, so empty is valid
-    return info.length > 2000 ? "Additional information must be 2000 characters or less" : null;
+    return info.length > 2000
+      ? "Additional information must be 2000 characters or less"
+      : null;
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -207,37 +234,39 @@ export default function Page() {
     // Validate the field and update validation errors
     let validationError: string | null = null;
     switch (field) {
-      case 'firstName':
-      case 'lastName':
+      case "firstName":
+      case "lastName":
         validationError = validateName(value);
         break;
-      case 'email':
+      case "email":
         validationError = validateEmail(value);
         break;
-      case 'phoneNumber':
+      case "phoneNumber":
         validationError = validatePhone(value);
         break;
-      case 'additionalInformation':
+      case "additionalInformation":
         validationError = validateAdditionalInfo(value);
         break;
     }
 
     setValidationErrors((prev) => ({
       ...prev,
-      [field]: validationError || '',
+      [field]: validationError || "",
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Check for validation errors
-    const hasValidationErrors = Object.values(validationErrors).some(error => error);
+    const hasValidationErrors = Object.values(validationErrors).some(
+      (error) => error
+    );
     if (hasValidationErrors) {
       setError("Please fix the validation errors before submitting.");
       return;
     }
-    
+
     if (!formData.additionalInformation.trim()) {
       setError("Please provide additional information about your case.");
       return;
@@ -260,15 +289,17 @@ export default function Page() {
       // Process streaming response
       for await (const packet of streamGenerator) {
         if (packet.answer_piece) {
-          setResponse(prev => prev + packet.answer_piece);
+          setResponse((prev) => prev + packet.answer_piece);
         }
       }
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log('Request was aborted');
+      if (error.name === "AbortError") {
+        console.log("Request was aborted");
       } else {
         console.error("Error submitting case query:", error);
-        setError(error.message || "Failed to process your request. Please try again.");
+        setError(
+          error.message || "Failed to process your request. Please try again."
+        );
       }
     } finally {
       setIsLoading(false);
@@ -309,10 +340,14 @@ export default function Page() {
                   onChange={(e) =>
                     handleInputChange("firstName", e.target.value)
                   }
-                  className={`w-full h-9 ${validationErrors.firstName ? 'border-red-500' : ''}`}
+                  className={`w-full h-9 ${
+                    validationErrors.firstName ? "border-red-500" : ""
+                  }`}
                 />
                 {validationErrors.firstName && (
-                  <p className="text-red-500 text-xs mt-1">{validationErrors.firstName}</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    {validationErrors.firstName}
+                  </p>
                 )}
               </div>
 
@@ -330,10 +365,14 @@ export default function Page() {
                   onChange={(e) =>
                     handleInputChange("lastName", e.target.value)
                   }
-                  className={`w-full h-9 ${validationErrors.lastName ? 'border-red-500' : ''}`}
+                  className={`w-full h-9 ${
+                    validationErrors.lastName ? "border-red-500" : ""
+                  }`}
                 />
                 {validationErrors.lastName && (
-                  <p className="text-red-500 text-xs mt-1">{validationErrors.lastName}</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    {validationErrors.lastName}
+                  </p>
                 )}
               </div>
 
@@ -349,10 +388,14 @@ export default function Page() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
-                  className={`w-full h-9 ${validationErrors.email ? 'border-red-500' : ''}`}
+                  className={`w-full h-9 ${
+                    validationErrors.email ? "border-red-500" : ""
+                  }`}
                 />
                 {validationErrors.email && (
-                  <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    {validationErrors.email}
+                  </p>
                 )}
               </div>
 
@@ -370,10 +413,14 @@ export default function Page() {
                   onChange={(e) =>
                     handleInputChange("phoneNumber", e.target.value)
                   }
-                  className={`w-full h-9 ${validationErrors.phoneNumber ? 'border-red-500' : ''}`}
+                  className={`w-full h-9 ${
+                    validationErrors.phoneNumber ? "border-red-500" : ""
+                  }`}
                 />
                 {validationErrors.phoneNumber && (
-                  <p className="text-red-500 text-xs mt-1">{validationErrors.phoneNumber}</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    {validationErrors.phoneNumber}
+                  </p>
                 )}
               </div>
 
@@ -461,11 +508,17 @@ export default function Page() {
                   onChange={(e) =>
                     handleInputChange("additionalInformation", e.target.value)
                   }
-                  className={`w-full min-h-[100px] resize-y ${validationErrors.additionalInformation ? 'border-red-500' : ''}`}
+                  className={`w-full min-h-[100px] resize-y ${
+                    validationErrors.additionalInformation
+                      ? "border-red-500"
+                      : ""
+                  }`}
                   placeholder="Please describe your legal matter in detail..."
                 />
                 {validationErrors.additionalInformation && (
-                  <p className="text-red-500 text-xs mt-1">{validationErrors.additionalInformation}</p>
+                  <p className="text-red-500 text-xs mt-1">
+                    {validationErrors.additionalInformation}
+                  </p>
                 )}
               </div>
 
@@ -492,7 +545,9 @@ export default function Page() {
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
                   <p className="text-lg mb-2">Analyzing Your Case</p>
-                  <p className="text-sm">Please wait while we process your request...</p>
+                  <p className="text-sm">
+                    Please wait while we process your request...
+                  </p>
                 </div>
               </div>
             )}
@@ -515,7 +570,10 @@ export default function Page() {
                     className="prose dark:prose-invert max-w-full text-base"
                     components={markdownComponents}
                     remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[[rehypePrism, { ignoreMissing: true }], rehypeKatex]}
+                    rehypePlugins={[
+                      [rehypePrism, { ignoreMissing: true }],
+                      rehypeKatex,
+                    ]}
                     urlTransform={transformLinkUri}
                   >
                     {processedResponse}
@@ -523,7 +581,9 @@ export default function Page() {
                   {isLoading && (
                     <div className="flex items-center mt-2 text-blue-600">
                       <div className="animate-pulse">▊</div>
-                      <span className="ml-2 text-sm">Generating response...</span>
+                      <span className="ml-2 text-sm">
+                        Generating response...
+                      </span>
                     </div>
                   )}
                 </div>
