@@ -17,7 +17,7 @@ RUN echo "ONYX_VERSION: ${ONYX_VERSION}"
 COPY ./requirements/model_server.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir --upgrade \
         --retries 5 \
-        --timeout 30 \
+        --timeout 300 \
         -r /tmp/requirements.txt
 
 RUN apt-get remove -y --allow-remove-essential perl-base && \ 

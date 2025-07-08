@@ -33,7 +33,7 @@ RUN apt-get update && \
 COPY ./requirements/default.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir --upgrade \
         --retries 5 \
-        --timeout 30 \
+        --timeout 300 \
         -r /tmp/requirements.txt && \
     pip uninstall --yes py && \
     playwright install chromium && \
