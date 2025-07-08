@@ -24,7 +24,7 @@ from onyx.context.search.models import InferenceSection
 from onyx.context.search.models import RerankingDetails
 from onyx.context.search.postprocessing.postprocessing import rerank_sections
 from onyx.context.search.postprocessing.postprocessing import should_rerank
-from onyx.db.engine import get_session_context_manager
+from onyx.db.engine.sql_engine import get_session_with_current_tenant
 from onyx.db.search_settings import get_current_search_settings
 from onyx.utils.timing import log_function_time
 
@@ -47,18 +47,20 @@ def rerank_documents(
 
     graph_config = cast(GraphConfig, config["metadata"]["config"])
     question = (
-        state.question if state.question else graph_config.inputs.search_request.query
+        state.question
+        if state.question
+        else graph_config.inputs.prompt_builder.raw_user_query
     )
     assert (
         graph_config.tooling.search_tool
     ), "search_tool must be provided for agentic search"
 
     # Note that these are passed in values from the API and are overrides which are typically None
-    rerank_settings = graph_config.inputs.search_request.rerank_settings
+    rerank_settings = graph_config.inputs.rerank_settings
     allow_agent_reranking = graph_config.behavior.allow_agent_reranking
 
     if rerank_settings is None:
-        with get_session_context_manager() as db_session:
+        with get_session_with_current_tenant() as db_session:
             search_settings = get_current_search_settings(db_session)
             if not search_settings.disable_rerank_for_streaming:
                 rerank_settings = RerankingDetails.from_db_model(search_settings)
@@ -95,7 +97,7 @@ def rerank_documents(
 
     return DocRerankingUpdate(
         reranked_documents=[
-            doc for doc in reranked_documents if type(doc) == InferenceSection
+            doc for doc in reranked_documents if isinstance(doc, InferenceSection)
         ][:AGENT_RERANKING_MAX_QUERY_RETRIEVAL_RESULTS],
         sub_question_retrieval_stats=fit_scores,
         log_messages=[

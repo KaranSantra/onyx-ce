@@ -23,7 +23,7 @@ from onyx.connectors.models import InputType
 from onyx.db.connector import create_connector
 from onyx.db.connector_credential_pair import add_credential_to_connector
 from onyx.db.credentials import create_credential
-from onyx.db.engine import get_session
+from onyx.db.engine.sql_engine import get_session
 from onyx.db.enums import AccessType
 from onyx.db.enums import ConnectorCredentialPairStatus
 from onyx.db.models import ConnectorCredentialPair
@@ -86,7 +86,7 @@ def create_folder(
 @router.get(
     "/user/folder",
 )
-def get_folders(
+def user_get_folders(
     user: User = Depends(current_user),
     db_session: Session = Depends(get_session),
 ) -> list[UserFolderSnapshot]:

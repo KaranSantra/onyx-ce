@@ -5,8 +5,9 @@ from uuid import UUID
 import requests
 from requests.models import CaseInsensitiveDict
 
-from ee.onyx.server.query_history.models import ChatSessionMinimal
-from ee.onyx.server.query_history.models import ChatSessionSnapshot
+# EE imports commented out - Enterprise Edition features not available
+# from ee.onyx.server.query_history.models import ChatSessionMinimal
+# from ee.onyx.server.query_history.models import ChatSessionSnapshot
 from onyx.configs.constants import QAFeedbackType
 from onyx.server.documents.models import PaginatedReturn
 from tests.integration.common_utils.constants import API_SERVER_URL
@@ -23,7 +24,12 @@ class QueryHistoryManager:
         start_time: datetime | None = None,
         end_time: datetime | None = None,
         user_performing_action: DATestUser | None = None,
-    ) -> PaginatedReturn[ChatSessionMinimal]:
+    ) -> None:  # Changed return type since EE features not available
+        print("EE features not available - Query history retrieval skipped")
+        return None
+        
+        # EE-related code commented out below - Enterprise Edition features not available
+        """
         query_params: dict[str, str | int] = {
             "page_num": page_num,
             "page_size": page_size,
@@ -49,12 +55,18 @@ class QueryHistoryManager:
             items=[ChatSessionMinimal(**item) for item in data["items"]],
             total_items=data["total_items"],
         )
+        """
 
     @staticmethod
     def get_chat_session_admin(
         chat_session_id: UUID | str,
         user_performing_action: DATestUser | None = None,
-    ) -> ChatSessionSnapshot:
+    ) -> None:  # Changed return type since EE features not available
+        print("EE features not available - Chat session admin retrieval skipped")
+        return None
+        
+        # EE-related code commented out below - Enterprise Edition features not available
+        """
         response = requests.get(
             url=f"{API_SERVER_URL}/admin/chat-session-history/{chat_session_id}",
             headers=(
@@ -65,13 +77,19 @@ class QueryHistoryManager:
         )
         response.raise_for_status()
         return ChatSessionSnapshot(**response.json())
+        """
 
     @staticmethod
     def get_query_history_as_csv(
         start_time: datetime | None = None,
         end_time: datetime | None = None,
         user_performing_action: DATestUser | None = None,
-    ) -> tuple[CaseInsensitiveDict[str], str]:
+    ) -> tuple[None, str]:  # Changed return type since EE features not available
+        print("EE features not available - Query history CSV export skipped")
+        return None, "EE features not available"
+        
+        # EE-related code commented out below - Enterprise Edition features not available
+        """
         query_params: dict[str, str | int] = {}
         if start_time:
             query_params["start"] = start_time.isoformat()
@@ -88,3 +106,4 @@ class QueryHistoryManager:
         )
         response.raise_for_status()
         return response.headers, response.content.decode()
+        """

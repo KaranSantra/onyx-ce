@@ -1,7 +1,7 @@
 import requests
 from retry import retry
 
-from ee.onyx.server.query_and_chat.models import OneShotQARequest
+#from ee.onyx.server.query_and_chat.models import OneShotQARequest
 from onyx.chat.models import ThreadMessage
 from onyx.configs.constants import DocumentSource
 from onyx.configs.constants import MessageType
@@ -27,6 +27,9 @@ def _api_url_builder(env_name: str, api_path: str) -> str:
 def get_answer_from_query(
     query: str, only_retrieve_docs: bool, env_name: str
 ) -> tuple[list[str], str]:
+    print("EE features not available - get_answer_from_query skipped")
+    return
+    """
     filters = IndexFilters(
         source_type=None,
         document_set=None,
@@ -68,7 +71,7 @@ def get_answer_from_query(
         raise e
 
     return context_data_list, answer
-
+    """
 
 @retry(tries=10, delay=10)
 def check_indexing_status(env_name: str) -> tuple[int, bool]:

@@ -7,10 +7,7 @@ import { adminDeleteCredential } from "@/lib/credential";
 import { setupGoogleDriveOAuth } from "@/lib/googleDrive";
 import { GOOGLE_DRIVE_AUTH_IS_ADMIN_COOKIE_NAME } from "@/lib/constants";
 import Cookies from "js-cookie";
-import {
-  TextFormField,
-  SectionHeader,
-} from "@/components/admin/connectors/Field";
+import { TextFormField, SectionHeader } from "@/components/Field";
 import { Form, Formik } from "formik";
 import { User } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -168,7 +165,10 @@ export const DriveJsonUpload = ({
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       const file = files[0];
-      if (file.type === "application/json" || file.name.endsWith(".json")) {
+      if (
+        file !== undefined &&
+        (file.type === "application/json" || file.name.endsWith(".json"))
+      ) {
         handleFileUpload(file);
       } else {
         setPopup({
@@ -224,6 +224,9 @@ export const DriveJsonUpload = ({
                   return;
                 }
                 const file = event.target.files[0];
+                if (file === undefined) {
+                  return;
+                }
                 handleFileUpload(file);
               }}
             />

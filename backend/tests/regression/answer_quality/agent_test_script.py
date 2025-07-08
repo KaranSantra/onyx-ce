@@ -9,16 +9,13 @@ from typing import Any
 import yaml
 
 from onyx.agents.agent_search.deep_search.main.graph_builder import (
-    main_graph_builder,
-)
-from onyx.agents.agent_search.deep_search.main.graph_builder import (
-    main_graph_builder as main_graph_builder_a,
+    agent_search_graph_builder,
 )
 from onyx.agents.agent_search.deep_search.main.states import (
     MainInput as MainInput_a,
 )
+from onyx.agents.agent_search.run_graph import run_agent_search_graph
 from onyx.agents.agent_search.run_graph import run_basic_graph
-from onyx.agents.agent_search.run_graph import run_main_graph
 from onyx.agents.agent_search.shared_graph_utils.utils import get_test_config
 from onyx.chat.models import AgentAnswerPiece
 from onyx.chat.models import OnyxAnswerPiece
@@ -27,7 +24,7 @@ from onyx.chat.models import StreamStopInfo
 from onyx.chat.models import StreamType
 from onyx.chat.models import SubQuestionPiece
 from onyx.context.search.models import SearchRequest
-from onyx.db.engine import get_session_context_manager
+from onyx.db.engine.sql_engine import get_session_with_current_tenant
 from onyx.llm.factory import get_default_llms
 from onyx.tools.force import ForceUseTool
 from onyx.tools.tool_implementations.search.search_tool import SearchTool
@@ -44,7 +41,7 @@ INPUT_DIR = CONFIG["agent_test_input_folder"]
 OUTPUT_DIR = CONFIG["agent_test_output_folder"]
 
 
-graph = main_graph_builder(test_mode=True)
+graph = agent_search_graph_builder()
 compiled_graph = graph.compile()
 primary_llm, fast_llm = get_default_llms()
 
@@ -64,7 +61,7 @@ example_ids = test_data["example_ids"]
 
 failed_example_ids: list[int] = []
 
-with get_session_context_manager() as db_session:
+with get_session_with_current_tenant() as db_session:
     output_data: dict[str, Any] = {}
 
     primary_llm, fast_llm = get_default_llms()
@@ -92,7 +89,7 @@ with get_session_context_manager() as db_session:
 
             logger.debug("\n\nTEST QUERY START\n\n")
 
-            graph = main_graph_builder_a()
+            graph = agent_search_graph_builder()
             compiled_graph = graph.compile()
             query_end_time = datetime.now()
 
@@ -108,7 +105,7 @@ with get_session_context_manager() as db_session:
 
             answer_tokens: dict[str, list[str]] = defaultdict(list)
 
-            with get_session_context_manager() as db_session:
+            with get_session_with_current_tenant() as db_session:
                 config = get_test_config(
                     db_session, primary_llm, fast_llm, search_request
                 )
@@ -152,7 +149,7 @@ with get_session_context_manager() as db_session:
                     lambda: defaultdict(str)
                 )
 
-                for output in run_main_graph(config):
+                for output in run_agent_search_graph(config):
                     if isinstance(output, AgentAnswerPiece):
                         if output.level == 0 and output.level_question_num == 0:
                             answer_tokens["initial"].append(output.answer_piece)

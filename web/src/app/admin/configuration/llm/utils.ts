@@ -9,9 +9,13 @@ import {
   IconProps,
   DeepseekIcon,
   OpenAISVG,
+  QwenIcon,
 } from "@/components/icons/icons";
 
-export const getProviderIcon = (providerName: string, modelName?: string) => {
+export const getProviderIcon = (
+  providerName: string,
+  modelName?: string
+): (({ size, className }: IconProps) => JSX.Element) => {
   const iconMap: Record<
     string,
     ({ size, className }: IconProps) => JSX.Element
@@ -29,11 +33,17 @@ export const getProviderIcon = (providerName: string, modelName?: string) => {
     microsoft: MicrosoftIconSVG,
     meta: MetaIcon,
     google: GeminiIcon,
+    qwen: QwenIcon,
+    qwq: QwenIcon,
   };
 
   // First check if provider name directly matches an icon
-  if (providerName.toLowerCase() in iconMap) {
-    return iconMap[providerName.toLowerCase()];
+  const lowerProviderName = providerName.toLowerCase();
+  if (lowerProviderName in iconMap) {
+    const icon = iconMap[lowerProviderName];
+    if (icon) {
+      return icon;
+    }
   }
 
   // Then check if model name contains any of the keys
