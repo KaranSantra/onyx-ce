@@ -2,16 +2,8 @@
 
 import { useState, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -38,11 +30,6 @@ import { transformLinkUri } from "@/lib/utils";
 
 export default function Page() {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phoneNumber: "",
-    stateOfResidence: "",
     additionalInformation: "",
   });
 
@@ -213,26 +200,6 @@ export default function Page() {
   };
 
   // Validation functions
-  const validateEmail = (email: string): string | null => {
-    if (!email) return null; // Not required, so empty is valid
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email) ? null : "Please enter a valid email address";
-  };
-
-  const validatePhone = (phone: string): string | null => {
-    if (!phone) return null; // Not required, so empty is valid
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    const cleanPhone = phone.replace(/[\s\(\)\-\.]/g, "");
-    return phoneRegex.test(cleanPhone)
-      ? null
-      : "Please enter a valid phone number";
-  };
-
-  const validateName = (name: string): string | null => {
-    if (!name) return null; // Not required, so empty is valid
-    return name.length > 50 ? "Name must be 50 characters or less" : null;
-  };
-
   const validateAdditionalInfo = (info: string): string | null => {
     if (!info) return null; // Not required, so empty is valid
     return info.length > 2000
@@ -248,20 +215,8 @@ export default function Page() {
 
     // Validate the field and update validation errors
     let validationError: string | null = null;
-    switch (field) {
-      case "firstName":
-      case "lastName":
-        validationError = validateName(value);
-        break;
-      case "email":
-        validationError = validateEmail(value);
-        break;
-      case "phoneNumber":
-        validationError = validatePhone(value);
-        break;
-      case "additionalInformation":
-        validationError = validateAdditionalInfo(value);
-        break;
+    if (field === "additionalInformation") {
+      validationError = validateAdditionalInfo(value);
     }
 
     setValidationErrors((prev) => ({
@@ -366,183 +321,14 @@ export default function Page() {
           <div className="p-6 border-r border-gray-200 dark:border-gray-700 overflow-y-auto w-full">
             <form
               onSubmit={handleSubmit}
-              className="space-y-2 w-full max-w-none"
+              className="space-y-4 w-full max-w-none"
             >
-              <div className="w-full">
-                <Label
-                  htmlFor="firstName"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block"
-                >
-                  First name
-                </Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) =>
-                    handleInputChange("firstName", e.target.value)
-                  }
-                  className={`w-full h-9 ${
-                    validationErrors.firstName ? "border-red-500" : ""
-                  }`}
-                />
-                {validationErrors.firstName && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {validationErrors.firstName}
-                  </p>
-                )}
-              </div>
-
-              <div className="w-full">
-                <Label
-                  htmlFor="lastName"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block"
-                >
-                  Last name
-                </Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) =>
-                    handleInputChange("lastName", e.target.value)
-                  }
-                  className={`w-full h-9 ${
-                    validationErrors.lastName ? "border-red-500" : ""
-                  }`}
-                />
-                {validationErrors.lastName && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {validationErrors.lastName}
-                  </p>
-                )}
-              </div>
-
-              <div className="w-full">
-                <Label
-                  htmlFor="email"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block"
-                >
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  className={`w-full h-9 ${
-                    validationErrors.email ? "border-red-500" : ""
-                  }`}
-                />
-                {validationErrors.email && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {validationErrors.email}
-                  </p>
-                )}
-              </div>
-
-              <div className="w-full">
-                <Label
-                  htmlFor="phoneNumber"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block"
-                >
-                  Phone number
-                </Label>
-                <Input
-                  id="phoneNumber"
-                  type="tel"
-                  value={formData.phoneNumber}
-                  onChange={(e) =>
-                    handleInputChange("phoneNumber", e.target.value)
-                  }
-                  className={`w-full h-9 ${
-                    validationErrors.phoneNumber ? "border-red-500" : ""
-                  }`}
-                />
-                {validationErrors.phoneNumber && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {validationErrors.phoneNumber}
-                  </p>
-                )}
-              </div>
-
-              <div className="w-full">
-                <Label
-                  htmlFor="stateOfResidence"
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block"
-                >
-                  State of residence
-                </Label>
-                <Select
-                  value={formData.stateOfResidence}
-                  onValueChange={(value) =>
-                    handleInputChange("stateOfResidence", value)
-                  }
-                >
-                  <SelectTrigger className="w-full h-9">
-                    <SelectValue placeholder="Please Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="AL">Alabama</SelectItem>
-                    <SelectItem value="AK">Alaska</SelectItem>
-                    <SelectItem value="AZ">Arizona</SelectItem>
-                    <SelectItem value="AR">Arkansas</SelectItem>
-                    <SelectItem value="CA">California</SelectItem>
-                    <SelectItem value="CO">Colorado</SelectItem>
-                    <SelectItem value="CT">Connecticut</SelectItem>
-                    <SelectItem value="DE">Delaware</SelectItem>
-                    <SelectItem value="FL">Florida</SelectItem>
-                    <SelectItem value="GA">Georgia</SelectItem>
-                    <SelectItem value="HI">Hawaii</SelectItem>
-                    <SelectItem value="ID">Idaho</SelectItem>
-                    <SelectItem value="IL">Illinois</SelectItem>
-                    <SelectItem value="IN">Indiana</SelectItem>
-                    <SelectItem value="IA">Iowa</SelectItem>
-                    <SelectItem value="KS">Kansas</SelectItem>
-                    <SelectItem value="KY">Kentucky</SelectItem>
-                    <SelectItem value="LA">Louisiana</SelectItem>
-                    <SelectItem value="ME">Maine</SelectItem>
-                    <SelectItem value="MD">Maryland</SelectItem>
-                    <SelectItem value="MA">Massachusetts</SelectItem>
-                    <SelectItem value="MI">Michigan</SelectItem>
-                    <SelectItem value="MN">Minnesota</SelectItem>
-                    <SelectItem value="MS">Mississippi</SelectItem>
-                    <SelectItem value="MO">Missouri</SelectItem>
-                    <SelectItem value="MT">Montana</SelectItem>
-                    <SelectItem value="NE">Nebraska</SelectItem>
-                    <SelectItem value="NV">Nevada</SelectItem>
-                    <SelectItem value="NH">New Hampshire</SelectItem>
-                    <SelectItem value="NJ">New Jersey</SelectItem>
-                    <SelectItem value="NM">New Mexico</SelectItem>
-                    <SelectItem value="NY">New York</SelectItem>
-                    <SelectItem value="NC">North Carolina</SelectItem>
-                    <SelectItem value="ND">North Dakota</SelectItem>
-                    <SelectItem value="OH">Ohio</SelectItem>
-                    <SelectItem value="OK">Oklahoma</SelectItem>
-                    <SelectItem value="OR">Oregon</SelectItem>
-                    <SelectItem value="PA">Pennsylvania</SelectItem>
-                    <SelectItem value="RI">Rhode Island</SelectItem>
-                    <SelectItem value="SC">South Carolina</SelectItem>
-                    <SelectItem value="SD">South Dakota</SelectItem>
-                    <SelectItem value="TN">Tennessee</SelectItem>
-                    <SelectItem value="TX">Texas</SelectItem>
-                    <SelectItem value="UT">Utah</SelectItem>
-                    <SelectItem value="VT">Vermont</SelectItem>
-                    <SelectItem value="VA">Virginia</SelectItem>
-                    <SelectItem value="WA">Washington</SelectItem>
-                    <SelectItem value="WV">West Virginia</SelectItem>
-                    <SelectItem value="WI">Wisconsin</SelectItem>
-                    <SelectItem value="WY">Wyoming</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="w-full">
                 <Label
                   htmlFor="additionalInformation"
                   className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 block"
                 >
-                  Additional information
+                  Email input field
                 </Label>
                 <Textarea
                   id="additionalInformation"
@@ -550,12 +336,12 @@ export default function Page() {
                   onChange={(e) =>
                     handleInputChange("additionalInformation", e.target.value)
                   }
-                  className={`w-full min-h-[100px] resize-y ${
+                  className={`w-full min-h-[200px] resize-y ${
                     validationErrors.additionalInformation
                       ? "border-red-500"
                       : ""
                   }`}
-                  placeholder="Please describe your legal matter in detail..."
+                  placeholder="Paste email input here ..."
                 />
                 {validationErrors.additionalInformation && (
                   <p className="text-red-500 text-xs mt-1">
