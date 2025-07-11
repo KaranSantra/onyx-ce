@@ -74,12 +74,18 @@ If using a higher version, sometimes some libraries will not be available (i.e. 
 
 #### Backend: Python requirements
 
-Currently, we use pip and recommend creating a virtual environment.
+Currently, we use uv for faster Python package management. For local development, we recommend creating a virtual environment. Note that in Docker containers, we install packages to the system Python for compatibility.
 
-For convenience here's a command for it:
+First, install uv:
 
 ```bash
-python -m venv .venv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+For local development, create and activate a virtual environment:
+
+```bash
+uv venv .venv
 source .venv/bin/activate
 ```
 
@@ -102,10 +108,10 @@ If using PowerShell, the command slightly differs:
 Install the required python dependencies:
 
 ```bash
-pip install -r onyx/backend/requirements/default.txt
-pip install -r onyx/backend/requirements/dev.txt
-pip install -r onyx/backend/requirements/ee.txt
-pip install -r onyx/backend/requirements/model_server.txt
+uv pip install -r onyx/backend/requirements/default.txt
+uv pip install -r onyx/backend/requirements/dev.txt
+uv pip install -r onyx/backend/requirements/ee.txt
+uv pip install -r onyx/backend/requirements/model_server.txt
 ```
 
 Install Playwright for Python (headless browser required by the Web Connector)
@@ -138,7 +144,7 @@ First, install pre-commit (if you don't have it already) following the instructi
 With the virtual environment active, install the pre-commit library with:
 
 ```bash
-pip install pre-commit
+uv pip install pre-commit
 ```
 
 Then, from the `onyx/backend` directory, run:
