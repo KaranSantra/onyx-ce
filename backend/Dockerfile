@@ -43,14 +43,16 @@ RUN apt-get update && \
 
 
 
+# Install uv for faster Python package installation
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
+
 # Install Python dependencies
 # Remove py which is pulled in by retry, py is not needed and is a CVE
 COPY ./requirements/default.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir --upgrade \
-        --retries 5 \
-        --timeout 300 \
+RUN uv pip install --system --no-cache --upgrade \
         -r /tmp/requirements.txt && \
-    pip uninstall --yes py && \
+    uv pip uninstall --system py && \
     playwright install chromium && \
     playwright install-deps chromium && \
     ln -s /usr/local/bin/supervisord /usr/bin/supervisord

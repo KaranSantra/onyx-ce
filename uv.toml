@@ -1,0 +1,27 @@
+# uv configuration for Onyx project
+# https://docs.astral.sh/uv/reference/settings/
+
+[pip]
+# Timeout for network requests (matches the original pip --timeout 300)
+timeout = 300
+
+# Number of retries for network requests (matches the original pip --retries 5)
+retries = 5
+
+# Disable pip version check
+disable-pip-version-check = true
+
+# Always upgrade packages
+upgrade = true
+
+# Use aggressive caching for faster installs
+compile-bytecode = true
+
+# Python version constraint for the project
+python = "3.11.7"
+
+# Index settings
+index-strategy = "unsafe-best-match"
+
+# Enable progress bars
+progress = true
